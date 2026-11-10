@@ -1,0 +1,7 @@
+OLED SDA 9
+OLED SCL 8
+DOWN 13
+SELECT 12
+BACK 11
+Buzzer 10
+RGB LED 21(internal)
