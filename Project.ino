@@ -10,7 +10,7 @@
 const char* ssid     = "YOURWIFI";
 const char* password = "YOURPASSWORD";
 const char* weatherApiKey = "YOURAPI";
-const char* city     = "YOURCİTY";
+const char* city     = "YOURCITY";
 const char* country  = "YOURCOUNTRY";
 
 // OpenSky Info
@@ -279,7 +279,7 @@ void updateDisplay() {
   }
   else if (currentState == MENU_PLANES) {
     display.setCursor(0, 0);
-    display.println("=== TR FLIGHT TRACKER ===");
+    display.println("=== FLIGHT TRACKER ===");
     display.drawLine(0, 10, 128, 10, SSD1306_WHITE);
 
     if (WiFi.status() == WL_CONNECTED) {
