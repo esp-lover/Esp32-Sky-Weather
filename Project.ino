@@ -25,7 +25,7 @@ const char* openskyPass = "YOUROPENSKYAPI";
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- BUTTON PINS ---
-const int BTN_UP     = 13; 
+const int BTN_DOWN     = 13; 
 const int BTN_SELECT = 12; 
 const int BTN_BACK   = 11; 
 
