@@ -2,7 +2,7 @@ ESP32 Mini Air Station
 
 I was bored, so I decided to make this project!
 
-This project is a mini air station powered by an ESP32-S3 Zero. If you use a different ESP32 board, you may need to change the pin assignments.
+This project is a mini air station powered by an ESP32 S3 Zero. If you use a different ESP32 board, you may need to change the pin assignments.
 
 I configured the OpenSky API to track aircraft over my country's region. If OpenSky doesn't work properly, you can customize these coordinates in the code:
 
