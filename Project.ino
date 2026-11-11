@@ -8,7 +8,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_NeoPixel.h>
 
-// ================= SETTINGS =================
+// ================= SETTINGS ================
 
 const char* ssid = "here";
 const char* password = "here";
