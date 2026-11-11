@@ -7,15 +7,15 @@
 #include <Adafruit_NeoPixel.h>
 
 // --- SETTINGS ---
-const char* ssid     = "YOURWIFI";
-const char* password = "YOURPASSWORD";
-const char* weatherApiKey = "YOURAPI";
-const char* city     = "YOURCITY";
-const char* country  = "YOURCOUNTRY";
+const char* ssid     = "YOUR_WIFI";
+const char* password = "YOUR_PASSWORD";
+const char* weatherApiKey = "YOUR_API_KEY";
+const char* city     = "YOUR_CITY";
+const char* country  = "COUNTRY";
 
 // OpenSky Info
-const char* openskyUser = "YOUROPENSKYNAME";
-const char* openskyPass = "YOUROPENSKYAPI";
+const char* openskyUser = "YOUR_OPENSKY_NAME";
+const char* openskyPass = "YOUR_OPENSKY_API";
 
 // --- OLED DISPLAY SETTINGS (SDA: 9, SCL: 8) ---
 #define SCREEN_WIDTH 128
@@ -25,7 +25,7 @@ const char* openskyPass = "YOUROPENSKYAPI";
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- BUTTON PINS ---
-const int BTN_DOWN     = 13; 
+const int BTN_UP     = 13; 
 const int BTN_SELECT = 12; 
 const int BTN_BACK   = 11; 
 
@@ -48,7 +48,7 @@ int settingsIndex = 0;
 int selectedGameType = 0; 
 int gameDifficulty = 1; 
 
-// Data variables
+// Data
 float temperature = 0.0;
 int humidity = 0;
 float windSpeed = 0.0;
@@ -60,9 +60,10 @@ bool planesLoaded = false;
 unsigned long lastRgbChange = 0;
 int rgbState = 0;
 
-// Button debouncing
+// Timing & Debouncing
 unsigned long lastButtonCheck = 0;
 const unsigned long buttonDelay = 150; 
+unsigned long lastGameTick = 0;
 
 // Game Variables
 int gameScore = 0;
@@ -85,7 +86,7 @@ Point food;
 void setup() {
   Serial.begin(115200);
   Wire.begin(9, 8);
-  Wire.setClock(100000);
+  Wire.setClock(100000); // Stable I2C speed
 
   pinMode(BTN_UP, INPUT_PULLUP);
   pinMode(BTN_SELECT, INPUT_PULLUP);
@@ -105,7 +106,7 @@ void setup() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.println("System Booting...");
+  display.println("System Starting...");
   display.display();
   delay(1000);
 
@@ -118,7 +119,11 @@ void loop() {
   handleInput();
 
   if (currentState == GAME_PLAYING) {
-    runGameLoop();
+    int tickInterval = (selectedGameType == 2) ? (150 - (gameDifficulty * 35)) : 30;
+    if (millis() - lastGameTick >= tickInterval) {
+      lastGameTick = millis();
+      runGameLoop();
+    }
   }
 
   if (currentState == MENU_WEATHER && !weatherLoaded && WiFi.status() == WL_CONNECTED) {
@@ -231,7 +236,7 @@ void updateDisplay() {
     display.println("=== MAIN MENU ===");
     display.drawLine(0, 10, 128, 10, SSD1306_WHITE);
     
-    const char* items[] = {"Games", "Weather", "Planes (OpenSky)", "Settings"};
+    const char* items[] = {"Games", "Weather", "Planes", "Settings"};
     for (int i = 0; i < 4; i++) {
       display.setCursor(5, 15 + (i * 12));
       if (i == mainMenuIndex) display.print("> ");
@@ -244,7 +249,7 @@ void updateDisplay() {
     display.println("=== GAMES ===");
     display.drawLine(0, 9, 128, 9, SSD1306_WHITE);
 
-    const char* diffStr = (gameDifficulty == 0) ? "Easy" : (gameDifficulty == 1) ? "Medium" : "Hard";
+    const char* diffS = (gameDifficulty == 0) ? "Easy" : (gameDifficulty == 1) ? "Medium" : "Hard";
     const char* games[] = {"1. Flappy Bird", "2. Froggit", "3. Snake", "Difficulty:"};
     for (int i = 0; i < 4; i++) {
       display.setCursor(2, 13 + (i * 12));
@@ -253,7 +258,7 @@ void updateDisplay() {
       display.print(games[i]);
       if (i == 3) {
         display.print(" [");
-        display.print(diffStr);
+        display.print(diffS);
         display.print("]");
       }
     }
@@ -267,14 +272,14 @@ void updateDisplay() {
       display.setCursor(0, 16);
       display.print("City: "); display.println(city);
       display.setCursor(0, 28);
-      display.print("Temp: "); display.print(temperature, 1); display.println(" C");
+      display.print("TEMP: "); display.print(temperature, 1); display.println(" C");
       display.setCursor(0, 40);
-      display.print("Humidity: %"); display.println(humidity);
+      display.print("HUMIDITY: %"); display.println(humidity);
       display.setCursor(0, 52);
-      display.print("Wind: "); display.print(windSpeed, 1); display.println(" m/s");
+      display.print("WIND: "); display.print(windSpeed, 1); display.println(" m/s");
     } else {
       display.setCursor(0, 25);
-      display.println("WiFi Disconnected!");
+      display.println("WiFi not connected!");
     }
   }
   else if (currentState == MENU_PLANES) {
@@ -284,13 +289,13 @@ void updateDisplay() {
 
     if (WiFi.status() == WL_CONNECTED) {
       display.setCursor(0, 20);
-      display.println("OpenSky Data:");
+      display.println("OpenSky Planes:");
       display.setCursor(0, 35);
       display.print("Active Planes: "); 
       display.println(activeAircraftCount);
     } else {
       display.setCursor(0, 25);
-      display.println("WiFi Disconnected!");
+      display.println("WiFi not connected!");
     }
   }
   else if (currentState == MENU_SETTINGS) {
@@ -300,13 +305,13 @@ void updateDisplay() {
 
     display.setCursor(5, 20);
     if (settingsIndex == 0) display.print("> "); else display.print("  ");
-    display.print("Buzzer: "); 
-    display.println(buzzerEnabled ? "On" : "Off");
+    display.print("Sound: "); 
+    display.println(buzzerEnabled ? "ON" : "OFF");
 
     display.setCursor(5, 35);
     if (settingsIndex == 1) display.print("> "); else display.print("  ");
     display.print("WiFi: ");
-    display.println(WiFi.status() == WL_CONNECTED ? "Connected" : "Offline");
+    display.println(WiFi.status() == WL_CONNECTED ? "Connected" : "Disconnected");
   }
 
   display.display();
@@ -437,33 +442,39 @@ void runGameLoop() {
   }
 
   display.display();
-  int delayMs = (selectedGameType == 2) ? (150 - (gameDifficulty * 35)) : 30;
-  delay(delayMs); 
 }
 
 void getOpenSkyData() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
+    // Bounding box aralığı küçültülerek veri yükü azaltıldı
     char urlBuffer[128];
-    snprintf(urlBuffer, sizeof(urlBuffer), "https://opensky-network.org/api/states/all?lamin=36.0&lamax=42.0&lomin=26.0&lomax=45.0");
+    snprintf(urlBuffer, sizeof(urlBuffer), "https://opensky-network.org/api/states/all?lamin=38.0&lamax=40.0&lomin=28.0&lomax=30.0");
     
     http.begin(urlBuffer);
-    http.setAuthorization(openskyUser, openskyPass);
-    http.setTimeout(3000); 
+    if (strlen(openskyUser) > 0 && strcmp(openskyUser, "YOUR_OPENSKY_NAME") != 0) {
+      http.setAuthorization(openskyUser, openskyPass);
+    }
+    http.setTimeout(4000); 
 
     int httpResponseCode = http.GET();
-    if (httpResponseCode > 0) {
-      String payload = http.getString();
+    if (httpResponseCode == HTTP_CODE_OK) {
+      WiFiClient* stream = http.getStreamPtr();
       
       StaticJsonDocument<64> filter;
       filter["states"] = true;
 
-      DynamicJsonDocument doc(3072);
-      DeserializationError error = deserializeJson(doc, payload, DeserializationOption::Filter(filter));
+      // Dinamik arabellek optimizasyonu (Stream kullanımı bellek tüketimini düşürür)
+      DynamicJsonDocument doc(8192);
+      DeserializationError error = deserializeJson(doc, *stream, DeserializationOption::Filter(filter));
+      
       if (!error) {
         JsonArray states = doc["states"];
         activeAircraftCount = states.size();
         planesLoaded = true;
+      } else {
+        Serial.print(F("OpenSky Parsing error: "));
+        Serial.println(error.c_str());
       }
     }
     http.end();
@@ -479,14 +490,16 @@ void getWeatherData() {
     http.begin(urlBuffer);
     http.setTimeout(3000);
     int httpResponseCode = http.GET();
-    if (httpResponseCode > 0) {
+    if (httpResponseCode == HTTP_CODE_OK) {
       String payload = http.getString();
       DynamicJsonDocument doc(1024);
-      deserializeJson(doc, payload);
-      temperature = doc["main"]["temp"];
-      humidity = doc["main"]["humidity"];
-      windSpeed = doc["wind"]["speed"];
-      weatherLoaded = true;
+      DeserializationError error = deserializeJson(doc, payload);
+      if (!error) {
+        temperature = doc["main"]["temp"];
+        humidity = doc["main"]["humidity"];
+        windSpeed = doc["wind"]["speed"];
+        weatherLoaded = true;
+      }
     }
     http.end();
   }
